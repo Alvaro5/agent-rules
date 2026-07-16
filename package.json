@@ -1,0 +1,45 @@
+{
+  "name": "agentrules",
+  "version": "0.1.0",
+  "description": "Check whether Claude Code actually followed the rules in your CLAUDE.md / AGENTS.md",
+  "type": "module",
+  "bin": {
+    "agentrules": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agents",
+    "claude-md",
+    "agents-md",
+    "testing",
+    "cli"
+  ],
+  "author": "Alvaro Serero",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^13.1.0",
+    "picomatch": "^4.0.2",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/picomatch": "^3.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
