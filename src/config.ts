@@ -4,6 +4,8 @@ import { parse } from "yaml";
 export interface AgentRulesConfig {
   /** The task given to the agent. */
   prompt: string;
+  /** Commands run in the worktree BEFORE the agent (e.g. `npm ci`). */
+  setup: string[];
   /** Commands that must exit 0 after the agent run. */
   must_run: string[];
   /** Globs the agent must not touch (matched against `git diff --name-only`). */
@@ -16,6 +18,7 @@ export class ConfigError extends Error {}
 
 const KNOWN_KEYS = new Set([
   "prompt",
+  "setup",
   "must_run",
   "forbidden_paths",
   "must_not_add_deps",
@@ -65,6 +68,7 @@ export function parseConfig(source: string, filename: string): AgentRulesConfig 
 
   return {
     prompt: obj.prompt,
+    setup: stringArray(obj.setup, "setup"),
     must_run: stringArray(obj.must_run, "must_run"),
     forbidden_paths: stringArray(obj.forbidden_paths, "forbidden_paths"),
     must_not_add_deps: obj.must_not_add_deps ?? false,

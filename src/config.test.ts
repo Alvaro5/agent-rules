@@ -8,6 +8,8 @@ describe("parseConfig", () => {
     const config = parseConfig(
       `
 prompt: Add an endpoint
+setup:
+  - npm ci
 must_run:
   - npm test
   - npm run lint
@@ -20,6 +22,7 @@ must_not_add_deps: true
     );
     expect(config).toEqual({
       prompt: "Add an endpoint",
+      setup: ["npm ci"],
       must_run: ["npm test", "npm run lint"],
       forbidden_paths: ["frontend/**", "*.lock"],
       must_not_add_deps: true,
@@ -30,6 +33,7 @@ must_not_add_deps: true
     const config = parseConfig("prompt: do the thing", FILE);
     expect(config).toEqual({
       prompt: "do the thing",
+      setup: [],
       must_run: [],
       forbidden_paths: [],
       must_not_add_deps: false,

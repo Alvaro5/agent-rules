@@ -4,6 +4,15 @@ import { resolve } from "node:path";
 import { loadConfig, ConfigError } from "./config.js";
 import { repoRoot, createWorktree, changedFiles, GitError } from "./git.js";
 import { runAgent } from "./agent.js";
+import {
+  checkMustRun,
+  checkForbiddenPaths,
+  checkNoNewDeps,
+  runCommand,
+  tail,
+  type CheckResult,
+} from "./checks.js";
+import { formatReport } from "./report.js";
 
 const program = new Command();
 
@@ -28,11 +37,27 @@ program
       const worktree = await createWorktree(root);
 
       try {
+        for (const command of config.setup) {
+          console.log(`Setup: ${command}`);
+          const { exitCode, output } = await runCommand(command, worktree.path);
+          if (exitCode !== 0) {
+            const suffix = exitCode === null ? "timed out" : `exit ${exitCode}`;
+            console.error(`Error: setup command failed (${suffix}): ${command}`);
+            const context = tail(output);
+            if (context) console.error(context);
+            process.exitCode = 1;
+            return;
+          }
+        }
+
         console.log(`Running Claude Code headless (this can take a few minutes) ...\n`);
         const result = await runAgent(config.prompt, worktree.path, (chunk) =>
           process.stdout.write(chunk),
         );
         console.log(`\nAgent finished (exit ${result.exitCode}).`);
+        if (result.exitCode !== 0) {
+          console.log("Agent exited non-zero — evaluating what it did anyway.");
+        }
 
         const changed = await changedFiles(worktree.path);
         if (changed.length === 0) {
@@ -41,7 +66,22 @@ program
           console.log(`Changed files:\n${changed.map((f) => `  ${f}`).join("\n")}`);
         }
 
-        // Assertions (must_run, forbidden_paths, must_not_add_deps) land next.
+        const results: CheckResult[] = [
+          ...(await checkMustRun(config.must_run, worktree.path)),
+          ...checkForbiddenPaths(config.forbidden_paths, changed),
+        ];
+        if (config.must_not_add_deps) {
+          results.push(await checkNoNewDeps(worktree.path, changed));
+        }
+
+        if (results.length === 0) {
+          console.log(
+            "\nNo checks defined — add must_run / forbidden_paths / must_not_add_deps to agentrules.yaml to get a report.",
+          );
+        } else {
+          console.log("\n" + formatReport(results, process.stdout.isTTY ?? false));
+          if (results.some((r) => !r.passed)) process.exitCode = 1;
+        }
       } finally {
         if (opts.keep) {
           console.log(`\nWorktree kept at: ${worktree.path}`);
