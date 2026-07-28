@@ -1,0 +1,15 @@
+# A 2-minute demo of agentrules on a toy repo.
+# The task asks the agent to edit src/math.js; the checks then verify
+# the result works, nothing else was touched, and no deps were added.
+
+prompt: Add a subtract(a, b) function to src/math.js and export it. Do not touch any other file.
+
+must_run:
+  - node -e "if (require('./src/math.js').subtract(5,2) !== 3) process.exit(1)"
+  - node -e "if (require('./src/math.js').add(1,1) !== 2) process.exit(1)"
+
+forbidden_paths:
+  - package.json
+  - .github/**
+
+must_not_add_deps: true

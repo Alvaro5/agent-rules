@@ -83,6 +83,12 @@ Adherence: 2/3
 
 Exit code is `0` when every check passes and `1` otherwise, so you can script around it. `must_run` and `setup` commands run through your shell in the worktree, with a 10-minute timeout each.
 
+## Try it in 2 minutes
+
+[`examples/toy-node`](examples/toy-node) is a ready-made toy repo with a task
+and checks — copy it out, `git init`, `agentrules run`. Its README walks
+through both the all-pass run and a deliberate rule violation.
+
 ## Honest limitation
 
 Agent runs are nondeterministic. One run is an **adherence report**, not a regression verdict — the same prompt can produce a different diff tomorrow. `agentrules` tells you what happened in *this* run; treat trends across runs as signal, single runs as anecdote.

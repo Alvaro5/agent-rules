@@ -13,7 +13,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -30,6 +30,14 @@
   ],
   "author": "Alvaro Serero",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alvaro5/agent-rules.git"
+  },
+  "homepage": "https://github.com/Alvaro5/agent-rules#readme",
+  "bugs": {
+    "url": "https://github.com/Alvaro5/agent-rules/issues"
+  },
   "dependencies": {
     "commander": "^13.1.0",
     "picomatch": "^4.0.2",
