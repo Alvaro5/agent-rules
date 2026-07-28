@@ -4,7 +4,17 @@
 
 You write agent instructions by intuition and never know if they're obeyed. When you edit the file, you can't tell if you made things better or worse. `agentrules` gives you a concrete answer for one run: here's what the agent did, here's which of your rules it respected.
 
-> **Status: v0.1 feature-complete, not yet published to npm.** The full loop works: isolated worktree, headless agent run, deterministic checks, pass/fail report with adherence score.
+> **Status: v0.1.** The full loop works: isolated worktree, headless agent run, deterministic checks, pass/fail report with adherence score.
+
+## Install
+
+```sh
+npm install -g agentrules-cli   # installs the `agentrules` command
+# or run one-off:
+npx agentrules-cli init
+```
+
+(The npm package is `agentrules-cli`; the command it installs is `agentrules`.)
 
 ## How it works
 
