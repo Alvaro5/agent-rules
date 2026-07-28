@@ -25,7 +25,13 @@ One command: `agentrules run`.
 
 ## Usage
 
-Create an `agentrules.yaml` in your repo:
+Scaffold a config in your repo (avoids YAML paste/indentation accidents):
+
+```sh
+agentrules init   # writes a starter agentrules.yaml; never overwrites
+```
+
+Then edit it. A full config looks like:
 
 ```yaml
 # The task to give the agent — make it realistic for your codebase.

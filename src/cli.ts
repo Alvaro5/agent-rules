@@ -13,6 +13,7 @@ import {
   type CheckResult,
 } from "./checks.js";
 import { formatReport } from "./report.js";
+import { initConfig, InitError } from "./init.js";
 
 const program = new Command();
 
@@ -22,6 +23,21 @@ program
     "Check whether Claude Code actually followed the rules in your CLAUDE.md / AGENTS.md",
   )
   .version("0.1.0");
+
+program
+  .command("init")
+  .description("Create a starter agentrules.yaml in the current directory")
+  .action(async () => {
+    try {
+      await initConfig("agentrules.yaml");
+      console.log(
+        "Created agentrules.yaml — edit the prompt (and uncomment the checks you want), then run `agentrules run`.",
+      );
+    } catch (err) {
+      console.error(err instanceof InitError ? `Error: ${err.message}` : err);
+      process.exitCode = 1;
+    }
+  });
 
 program
   .command("run")
