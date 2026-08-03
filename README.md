@@ -1,10 +1,12 @@
 # agentrules
 
-**Check whether Claude Code actually followed the rules in your `CLAUDE.md` / `AGENTS.md`.**
+**Turn the rules in your `CLAUDE.md` into deterministic checks, and see whether a real Claude Code run respects them.**
 
-You write agent instructions by intuition and never know if they're obeyed. When you edit the file, you can't tell if you made things better or worse. `agentrules` gives you a concrete answer for one run: here's what the agent did, here's which of your rules it respected.
+You write agent instructions by intuition and never know if they're obeyed. When you edit the file, you can't tell if you made things better or worse. `agentrules` gives you a concrete answer for one run: here's what the agent did, here's which of your checks held.
 
-> **Status: v0.1.** The full loop works: isolated worktree, headless agent run, deterministic checks, pass/fail report with adherence score.
+To be clear about what it does: `agentrules` does **not** read or interpret your `CLAUDE.md` / `AGENTS.md`. You declare the outcomes that matter — tests still pass, this directory untouched, no new dependencies — as checks in `agentrules.yaml`, and it verifies those.
+
+> **Status: v0.1.** The full loop works: isolated worktree, headless agent run, deterministic checks, pass/fail report.
 
 ## Install
 
@@ -24,7 +26,9 @@ One command: `agentrules run`.
 2. Creates an isolated **git worktree** of your repo, so the agent can't touch your working tree.
 3. Runs Claude Code **headless** (`claude -p`) inside it, with permissions set for unattended file edits.
 4. Evaluates everything **deterministically after the fact** from the git state — no live monitoring, no transcript parsing. The diff *is* the behavior.
-5. Prints a pass/fail adherence report and cleans up the worktree.
+5. Prints a pass/fail report and cleans up the worktree.
+
+Note: the worktree is a fresh checkout of committed **`HEAD`**, so uncommitted local changes are not part of the run (the `agentrules.yaml` itself is read from your working directory and doesn't need to be committed).
 
 ## Requirements
 
@@ -88,10 +92,10 @@ FAIL  changes in frontend/**
       frontend/api-client.ts
 PASS  no new dependencies
 
-Adherence: 2/3
+Checks passed: 2/3
 ```
 
-Exit code is `0` when every check passes and `1` otherwise, so you can script around it. `must_run` and `setup` commands run through your shell in the worktree, with a 10-minute timeout each.
+Exit code is `0` when every check passes and `1` otherwise, so you can script around it. `must_run` and `setup` commands run through your shell in the worktree, with a 10-minute timeout each. The agent run itself is killed after 20 minutes; whatever it changed by then is still evaluated.
 
 ## Try it in 2 minutes
 

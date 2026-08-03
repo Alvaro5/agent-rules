@@ -1,6 +1,6 @@
 {
   "name": "agentrules-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Check whether Claude Code actually followed the rules in your CLAUDE.md / AGENTS.md",
   "type": "module",
   "bin": {

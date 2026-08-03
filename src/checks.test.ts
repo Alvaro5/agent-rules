@@ -22,6 +22,12 @@ describe("runCommand", () => {
     expect(result.exitCode).toBe(3);
     expect(result.output).toContain("hello");
   });
+
+  it("kills a timed-out command even when a child keeps the pipes open", async () => {
+    const result = await runCommand("echo started; sleep 30", ".", 500);
+    expect(result.exitCode).toBeNull();
+    expect(result.output).toContain("started");
+  }, 10_000);
 });
 
 describe("checkMustRun", () => {

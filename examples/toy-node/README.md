@@ -15,10 +15,10 @@ agentrules run
 ```
 
 Expected: the agent adds `subtract` to `src/math.js`, every check passes,
-`Adherence: 5/5`, exit code 0.
+`Checks passed: 5/5`, exit code 0.
 
 To see what a **violation** looks like, add the line `- src/**` under
 `forbidden_paths:` in `agentrules.yaml` and run it again — the task requires
 editing `src/math.js`, so the run must break that rule: `FAIL  changes in
-src/**` with the file listed, `Adherence: 4/5` (the agent may vary between
+src/**` with the file listed, `Checks passed: 4/5` (the agent may vary between
 runs, but that check can never pass), exit code 1.

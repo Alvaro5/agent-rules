@@ -17,7 +17,7 @@ describe("formatReport", () => {
         "PASS  no changes in frontend/**",
         "FAIL  new dependency: validator (package.json)",
         "",
-        "Adherence: 2/3",
+        "Checks passed: 2/3",
       ].join("\n"),
     );
   });

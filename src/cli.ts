@@ -3,7 +3,7 @@ import { Command } from "commander";
 import { resolve } from "node:path";
 import { loadConfig, ConfigError } from "./config.js";
 import { repoRoot, createWorktree, changedFiles, GitError } from "./git.js";
-import { runAgent } from "./agent.js";
+import { runAgent, AGENT_TIMEOUT_MS } from "./agent.js";
 import {
   checkMustRun,
   checkForbiddenPaths,
@@ -20,9 +20,9 @@ const program = new Command();
 program
   .name("agentrules")
   .description(
-    "Check whether Claude Code actually followed the rules in your CLAUDE.md / AGENTS.md",
+    "Turn the rules in your CLAUDE.md into deterministic checks, and see whether a real Claude Code run respects them",
   )
-  .version("0.1.0");
+  .version("0.1.1");
 
 program
   .command("init")
@@ -41,16 +41,44 @@ program
 
 program
   .command("run")
-  .description("Run the agent on the task in agentrules.yaml and report rule adherence")
+  .description("Run the agent on the task in agentrules.yaml and report which checks passed")
   .option("-c, --config <path>", "path to the test file", "agentrules.yaml")
   .option("--keep", "keep the worktree after the run for inspection")
   .action(async (opts: { config: string; keep?: boolean }) => {
     try {
       const config = await loadConfig(resolve(opts.config));
+      if (
+        config.must_run.length === 0 &&
+        config.forbidden_paths.length === 0 &&
+        !config.must_not_add_deps
+      ) {
+        console.error(
+          `Error: no checks defined in ${opts.config} — add must_run / forbidden_paths / must_not_add_deps to get a report.`,
+        );
+        process.exitCode = 1;
+        return;
+      }
       const root = await repoRoot(process.cwd());
 
       console.log(`Creating isolated worktree of ${root} ...`);
       const worktree = await createWorktree(root);
+
+      let removed = false;
+      const removeWorktree = async () => {
+        if (removed) return;
+        removed = true;
+        await worktree.remove();
+      };
+      const onSignal = (signal: NodeJS.Signals) => {
+        if (opts.keep) {
+          console.error(`\nInterrupted (${signal}). Worktree kept at: ${worktree.path}`);
+          process.exit(1);
+        }
+        console.error(`\nInterrupted (${signal}) — removing worktree ...`);
+        void removeWorktree().finally(() => process.exit(1));
+      };
+      process.once("SIGINT", onSignal);
+      process.once("SIGTERM", onSignal);
 
       try {
         for (const command of config.setup) {
@@ -70,9 +98,15 @@ program
         const result = await runAgent(config.prompt, worktree.path, (chunk) =>
           process.stdout.write(chunk),
         );
-        console.log(`\nAgent finished (exit ${result.exitCode}).`);
-        if (result.exitCode !== 0) {
-          console.log("Agent exited non-zero — evaluating what it did anyway.");
+        if (result.exitCode === null) {
+          console.log(
+            `\nAgent timed out after ${AGENT_TIMEOUT_MS / 60000} min and was killed — evaluating what it did anyway.`,
+          );
+        } else {
+          console.log(`\nAgent finished (exit ${result.exitCode}).`);
+          if (result.exitCode !== 0) {
+            console.log("Agent exited non-zero — evaluating what it did anyway.");
+          }
         }
 
         const changed = await changedFiles(worktree.path);
@@ -90,19 +124,15 @@ program
           results.push(await checkNoNewDeps(worktree.path, changed));
         }
 
-        if (results.length === 0) {
-          console.log(
-            "\nNo checks defined — add must_run / forbidden_paths / must_not_add_deps to agentrules.yaml to get a report.",
-          );
-        } else {
-          console.log("\n" + formatReport(results, process.stdout.isTTY ?? false));
-          if (results.some((r) => !r.passed)) process.exitCode = 1;
-        }
+        console.log("\n" + formatReport(results, process.stdout.isTTY ?? false));
+        if (results.some((r) => !r.passed)) process.exitCode = 1;
       } finally {
+        process.removeListener("SIGINT", onSignal);
+        process.removeListener("SIGTERM", onSignal);
         if (opts.keep) {
           console.log(`\nWorktree kept at: ${worktree.path}`);
         } else {
-          await worktree.remove();
+          await removeWorktree();
         }
       }
     } catch (err) {

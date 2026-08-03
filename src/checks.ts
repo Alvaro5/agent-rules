@@ -21,18 +21,30 @@ export interface CommandOutcome {
 }
 
 /** Run a shell command in `cwd`, capturing combined output. Never rejects. */
-export function runCommand(command: string, cwd: string): Promise<CommandOutcome> {
+export function runCommand(
+  command: string,
+  cwd: string,
+  timeoutMs = COMMAND_TIMEOUT_MS,
+): Promise<CommandOutcome> {
   return new Promise((resolve) => {
     const child = spawn(command, {
       shell: true,
       cwd,
-      timeout: COMMAND_TIMEOUT_MS,
+      timeout: timeoutMs,
       stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";
     child.stdout.on("data", (chunk) => (output += chunk));
     child.stderr.on("data", (chunk) => (output += chunk));
     child.on("error", (err) => resolve({ exitCode: 1, output: String(err) }));
+    child.on("exit", (_code, signal) => {
+      // A killed command can leave grandchildren holding the stdio pipes open,
+      // which would stall `close` indefinitely — drop the pipes ourselves.
+      if (signal) {
+        child.stdout.destroy();
+        child.stderr.destroy();
+      }
+    });
     child.on("close", (code, signal) =>
       resolve({ exitCode: signal ? null : (code ?? 1), output }),
     );

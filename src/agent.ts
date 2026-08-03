@@ -1,7 +1,10 @@
 import { spawn } from "node:child_process";
 
+export const AGENT_TIMEOUT_MS = 20 * 60 * 1000;
+
 export interface AgentResult {
-  exitCode: number;
+  /** null means the agent timed out and was killed. */
+  exitCode: number | null;
   output: string;
 }
 
@@ -26,12 +29,13 @@ export function runAgent(
   prompt: string,
   cwd: string,
   onOutput?: (chunk: string) => void,
+  timeoutMs = AGENT_TIMEOUT_MS,
 ): Promise<AgentResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(
       "claude",
       ["-p", prompt, "--permission-mode", "acceptEdits"],
-      { cwd, env: childEnv(), stdio: ["ignore", "pipe", "pipe"] },
+      { cwd, env: childEnv(), timeout: timeoutMs, stdio: ["ignore", "pipe", "pipe"] },
     );
 
     let output = "";
@@ -54,6 +58,16 @@ export function runAgent(
         reject(err);
       }
     });
-    child.on("close", (code) => resolve({ exitCode: code ?? 1, output }));
+    child.on("exit", (_code, signal) => {
+      // A killed agent can leave grandchildren holding the stdio pipes open,
+      // which would stall `close` indefinitely — drop the pipes ourselves.
+      if (signal) {
+        child.stdout.destroy();
+        child.stderr.destroy();
+      }
+    });
+    child.on("close", (code, signal) =>
+      resolve({ exitCode: signal ? null : (code ?? 1), output }),
+    );
   });
 }

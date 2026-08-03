@@ -20,6 +20,6 @@ export function formatReport(results: CheckResult[], color: boolean): string {
     }
   }
   const passed = results.filter((result) => result.passed).length;
-  lines.push("", `Adherence: ${passed}/${results.length}`);
+  lines.push("", `Checks passed: ${passed}/${results.length}`);
   return lines.join("\n");
 }
