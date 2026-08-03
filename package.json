@@ -1,7 +1,7 @@
 {
   "name": "agentrules-cli",
   "version": "0.1.1",
-  "description": "Check whether Claude Code actually followed the rules in your CLAUDE.md / AGENTS.md",
+  "description": "Turn the rules in your CLAUDE.md into deterministic checks, and see whether a real Claude Code run respects them",
   "type": "module",
   "bin": {
     "agentrules": "dist/cli.js"
